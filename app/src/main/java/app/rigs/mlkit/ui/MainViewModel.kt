@@ -19,11 +19,11 @@ import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    val snapchatifyBitmapProcessor  = SnapchatifyBitmapProcessor(application)
+    private val snapchatifyBitmapProcessor  = SnapchatifyBitmapProcessor(application)
 
+    private val barcodeBitmapProcessor = BarcodeBitmapProcessor()
 
-    val barcodeBitmapProcessor = BarcodeBitmapProcessor()
-
+    private val landmarkBitmapProcessor = LandmarkBitmapProcessor()
 
     var processedBitmap : MutableLiveData<Bitmap> = MutableLiveData()
 
@@ -52,33 +52,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun doBarcodeDetection(bitmap: Bitmap) {
-        val options = FirebaseVisionBarcodeDetectorOptions.Builder()
-            .setBarcodeFormats(
-                FirebaseVisionBarcode.FORMAT_QR_CODE)
-            .build()
-
-        val image = FirebaseVisionImage.fromBitmap(bitmap)
-
-        val detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options)
-        detector.detectInImage(image)
-            .addOnSuccessListener {
-                processedBitmap.postValue( barcodeBitmapProcessor.drawBoundingBoxes(bitmap, it))
-                var result = String()
-                it.forEach {
-                    result += " VALUE TYPE: ${it.valueType} FORMAT: ${it.format} Raw Value: ${it.rawValue}"
-                    textResult.postValue(result)
-                    Log.d("Barcode logs:", result)
-                }
-            }
-            .addOnFailureListener{
-                textResult.postValue(it.message)
-                Log.e("Barcode logs:", " Failed to find barcode", it)
-            }
-    }
-
     private fun doFaceAnnotation(bitmap: Bitmap) {
 
+        //<editor-fold desc="faceDetection">
         val options = FirebaseVisionFaceDetectorOptions.Builder()
             .setModeType(FirebaseVisionFaceDetectorOptions.ACCURATE_MODE)
             .setLandmarkType(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
@@ -96,12 +72,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .addOnFailureListener {
                 Toast.makeText(getApplication(), "Error detecting faces $it", Toast.LENGTH_SHORT).show()
             }
+        //</editor-fold>
     }
-
-    private val landmarkBitmapProcessor = LandmarkBitmapProcessor()
 
     private fun doLandmarkDetection(bitmap: Bitmap){
 
+        //<editor-fold desc="landmarkDetection">
         val options = FirebaseVisionCloudDetectorOptions.Builder()
             .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
             .setMaxResults(5)
@@ -128,11 +104,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .addOnFailureListener{
                 Toast.makeText(getApplication(), "Error detecting landmarks $it", Toast.LENGTH_SHORT).show()
             }
+        //</editor-fold>
     }
 
     private val ocrBitmapProcessor = OcrBitmapProcessor()
 
+    private fun doBarcodeDetection(bitmap: Bitmap) {
+        //<editor-fold desc="barcodeDetection">
+        val options = FirebaseVisionBarcodeDetectorOptions.Builder()
+            .setBarcodeFormats(
+                FirebaseVisionBarcode.FORMAT_QR_CODE)
+            .build()
+
+        val image = FirebaseVisionImage.fromBitmap(bitmap)
+
+        val detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options)
+        detector.detectInImage(image)
+            .addOnSuccessListener {
+                processedBitmap.postValue( barcodeBitmapProcessor.drawBoundingBoxes(bitmap, it))
+                var result = String()
+                it.forEach {
+                    result += " VALUE TYPE: ${it.valueType} FORMAT: ${it.format} Raw Value: ${it.rawValue}"
+                    textResult.postValue(result)
+                    Log.d("Barcode logs:", result)
+                }
+            }
+            .addOnFailureListener{
+                textResult.postValue(it.message)
+                Log.e("Barcode logs:", " Failed to find barcode", it)
+            }
+        //</editor-fold>
+    }
+
     private fun doOcrDetection(bitmap: Bitmap){
+        //<editor-fold desc="OcrDetection">
         val detector = FirebaseVision.getInstance()
             .visionTextDetector
 
@@ -154,6 +159,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .addOnFailureListener{
                 Toast.makeText(getApplication(), "Error detecting Text $it", Toast.LENGTH_LONG).show()
             }
+        //</editor-fold>
 
     }
 
