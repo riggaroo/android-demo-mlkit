@@ -7,10 +7,12 @@ import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
 import app.rigs.mlkit.processor.BarcodeBitmapProcessor
+import app.rigs.mlkit.processor.LandmarkBitmapProcessor
 import app.rigs.mlkit.processor.SnapchatifyBitmapProcessor
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions
+import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
 
@@ -37,6 +39,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun barcodeDetect(bitmap: Bitmap?){
         bitmap?.let {
             doBarcodeDetection(bitmap)
+        }
+    }
+
+    fun landmarkDetect(bitmap: Bitmap?){
+        bitmap?.let {
+            doLandmarkDetection(bitmap)
         }
     }
 
@@ -83,6 +91,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             .addOnFailureListener {
                 Toast.makeText(getApplication(), "Error detecting faces $it", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private val landmarkBitmapProcessor = LandmarkBitmapProcessor()
+
+    private fun doLandmarkDetection(bitmap: Bitmap){
+
+        val options = FirebaseVisionCloudDetectorOptions.Builder()
+            .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
+            .setMaxResults(5)
+            .build()
+
+        val image = FirebaseVisionImage.fromBitmap(bitmap)
+
+        val detector = FirebaseVision.getInstance()
+            .getVisionCloudLandmarkDetector(options)
+
+        detector.detectInImage(image)
+            .addOnSuccessListener {
+                processedBitmap.postValue( landmarkBitmapProcessor.drawBoundingBoxes(bitmap, it))
+                var result = String()
+                if (it.size == 0){
+                    Toast.makeText(getApplication(), "No Landmarks detected", Toast.LENGTH_LONG).show()
+                }
+                it.forEach {
+                    result += " LANDMARK: ${it.landmark} . Confidence: ${it.confidence}"
+                    textResult.postValue(result)
+                    Log.d("Barcode logs:", result)
+                }
+            }
+            .addOnFailureListener{
+                Toast.makeText(getApplication(), "Error detecting landmarks $it", Toast.LENGTH_SHORT).show()
             }
     }
 

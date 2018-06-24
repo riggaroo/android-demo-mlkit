@@ -70,6 +70,9 @@ class MainFragment : Fragment() {
         view.buttonQRCode.setOnClickListener{
             viewModel.barcodeDetect(bitmap)
         }
+        view.buttonLandmark.setOnClickListener{
+            viewModel.landmarkDetect(bitmap)
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
