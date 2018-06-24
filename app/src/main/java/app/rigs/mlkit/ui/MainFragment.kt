@@ -73,6 +73,9 @@ class MainFragment : Fragment() {
         view.buttonLandmark.setOnClickListener{
             viewModel.landmarkDetect(bitmap)
         }
+        view.buttonOCR.setOnClickListener{
+            viewModel.ocrDetection(bitmap)
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

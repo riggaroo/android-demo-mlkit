@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import app.rigs.mlkit.processor.BarcodeBitmapProcessor
 import app.rigs.mlkit.processor.LandmarkBitmapProcessor
+import app.rigs.mlkit.processor.OcrBitmapProcessor
 import app.rigs.mlkit.processor.SnapchatifyBitmapProcessor
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
@@ -15,8 +16,6 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOption
 import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
-
-
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -45,6 +44,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun landmarkDetect(bitmap: Bitmap?){
         bitmap?.let {
             doLandmarkDetection(bitmap)
+        }
+    }
+    fun ocrDetection(bitmap: Bitmap?){
+        bitmap?.let {
+            doOcrDetection(bitmap)
         }
     }
 
@@ -118,12 +122,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 it.forEach {
                     result += " LANDMARK: ${it.landmark} . Confidence: ${it.confidence}"
                     textResult.postValue(result)
-                    Log.d("Barcode logs:", result)
+                    Log.d("Landmark", result)
                 }
             }
             .addOnFailureListener{
                 Toast.makeText(getApplication(), "Error detecting landmarks $it", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private val ocrBitmapProcessor = OcrBitmapProcessor()
+
+    private fun doOcrDetection(bitmap: Bitmap){
+        val detector = FirebaseVision.getInstance()
+            .visionTextDetector
+
+        val firebaseImage = FirebaseVisionImage.fromBitmap(bitmap)
+
+        detector.detectInImage(firebaseImage)
+            .addOnSuccessListener {
+                processedBitmap.postValue(ocrBitmapProcessor.drawBoundingBoxes(bitmap, it))
+                var result = String()
+                if (it.blocks.size == 0){
+                    Toast.makeText(getApplication(), "No Text detected", Toast.LENGTH_LONG).show()
+                }
+                it.blocks.forEach {
+                    result += " " + it.text
+                    textResult.postValue(result)
+                    Log.d("Landmark", result)
+                }
+            }
+            .addOnFailureListener{
+                Toast.makeText(getApplication(), "Error detecting Text $it", Toast.LENGTH_LONG).show()
+            }
+
     }
 
 }

@@ -27,7 +27,7 @@
 
         <meta-data
                 android:name="com.google.firebase.ml.vision.DEPENDENCIES"
-                android:value="face,barcode" />
+                android:value="face,barcode,ocr" />
 
         <activity android:name=".MainActivity">
             <intent-filter>
